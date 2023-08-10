@@ -67,7 +67,7 @@ def getDataPaths(args):
             dir_path = os.path.join(args.base_dir, f'{dataset}_{data_type}')
             
             # Find images and labels in the directory
-            files = sorted(glob.glob(os.path.join(dir_path, "*.nii.gz")))
+            files = sorted(glob.glob(os.path.join(dir_path, args.organ+"*.nii.gz")))
             
             # Store the image and label paths in the dictionary
             data_paths[f'{dataset}_{data_type.split("_")[1]}'] = files
@@ -164,7 +164,14 @@ def makePredictions(test_loader):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base_dir', default = './content', help='The path to where the 2d slices are stored')
+    parser.add_argument('--base_dir',
+                        default = './content',
+                        help='The path to where the 2d slices are stored'
+                        )
+    parser.add_argument('--organ',
+                        default='',
+                        help='For which organ the inference should be made [liver,lung,pancreas,hepaticvessel,spleen,colon]. Default is all organs.'
+                        )
     args = parser.parse_args()
 
     data_paths = getDataPaths(args)
