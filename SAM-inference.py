@@ -120,7 +120,6 @@ def makePredictions(test_loader):
     # Iteratire through test images
     with torch.no_grad():
         for batch in tqdm(test_loader):
-
             # forward pass
             outputs = model(pixel_values=batch["pixel_values"], #.cuda(),
                         input_boxes=batch["input_boxes"],   #.cuda(),
@@ -155,9 +154,10 @@ def makePredictions(test_loader):
             plt.tight_layout()
             
 
-            #plt .savefig('./output/plots/'+name+'-prediction.png')
+            plt .savefig('./output/plots/'+name+'-prediction.png')
 
-            plt.savefig('./output/plots/model-prediction.png')
+            #plt.savefig('./output/plots/model-prediction.png')
+
             
 
 
