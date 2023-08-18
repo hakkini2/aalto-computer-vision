@@ -51,7 +51,7 @@ from samDataset import SAMDataset
 from samDataset import get_bounding_box
 
 
-#device = torch.device("cuda:0")
+device = torch.device("cuda:0")
 
 
 def getDataPaths(args):
@@ -114,23 +114,22 @@ def makePredictions(test_loader):
     '''
 
     # load pretrained weights
-    model = SamModel.from_pretrained("facebook/sam-vit-base")
-    #model.to(device)
+    model = SamModel.from_pretrained("facebook/sam-vit-base")   #sam-vit-huge
+    model.to(device)
     
     # Iteratire through test images
     with torch.no_grad():
         for batch in tqdm(test_loader):
             # forward pass
-            outputs = model(pixel_values=batch["pixel_values"], #.cuda(),
-                        input_boxes=batch["input_boxes"],   #.cuda(),
+            outputs = model(pixel_values=batch["pixel_values"].cuda(),
+                        input_boxes=batch["input_boxes"].cuda(),
                         multimask_output=False)
 
             # compute loss
             predicted_masks = outputs.pred_masks.squeeze(1)
-            ground_truth_masks = batch["ground_truth_mask"].float() #.cuda()
+            ground_truth_masks = batch["ground_truth_mask"].float().cuda()
     #         loss = seg_loss(predicted_masks, ground_truth_masks.unsqueeze(1))
-
-            
+                        
 
             # apply sigmoid
             medsam_seg_prob = torch.sigmoid(outputs.pred_masks.squeeze(1))
@@ -154,9 +153,9 @@ def makePredictions(test_loader):
             plt.tight_layout()
             
 
-            plt .savefig('./output/plots/'+name+'-prediction.png')
+            #plt .savefig('./output/plots/'+name+'-prediction.png')
 
-            #plt.savefig('./output/plots/model-prediction.png')
+            plt.savefig('./output/plots/model-prediction.png')
 
             
 
