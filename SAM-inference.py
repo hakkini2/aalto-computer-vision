@@ -139,6 +139,10 @@ def makePredictions(test_loader):
             
             name = batch["name"][0]
 
+            # save prediction
+            medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
+            nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
+
             plt.figure(figsize=(12,4))
             plt.suptitle(name, fontsize=14)
             plt.subplot(1,3,1)
