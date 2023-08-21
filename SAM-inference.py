@@ -115,7 +115,7 @@ def visualizeExample(example):
 
 
 
-def makePredictions(args, test_loader):
+def makePredictions(args, img_type, test_loader):
     '''
     Predictions with the SAM model and inference
     '''
@@ -149,7 +149,7 @@ def makePredictions(args, test_loader):
             # save prediction
             #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
             #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
-            saveSlicePrediction(args, name, medsam_seg)
+            saveSlicePrediction(args, img_type, name, medsam_seg)
 
 
             plt.figure(figsize=(12,4))
@@ -172,15 +172,23 @@ def makePredictions(args, test_loader):
 
             
 
-def saveSlicePrediction(args, name, medsam_seg):
+def saveSlicePrediction(args, img_type, name, medsam_seg):
     '''
-    Save predicted labels in 3D, in same format as the original
-    ground truth labels are saved. (so that they could be used
-    as pseudo labels in the future)
+    Save predicted labels in 3D, in nii.gz format (so that they could
+    be used as pseudo labels in the future)
     '''
     print(name)
-    slice_ind = int(name.split('_')[2])
-    print(slice_ind)
+    organ, patient, slice_ind = name.split('_')
+    slice_ind = int(slice_ind)
+
+    # get path to (initially) empty mask
+    pred_masks_dir = args.empty_masks_dir + organ + '_' + img_type + '/'
+    path = pred_masks_dir + organ + '_' + patient + '.nii.gz'
+    print(path)
+    mask = sitk.ReadImage(path)
+    mask_data = sitk.GetArrayFromImage(mask)
+
+    # next add the predicted slice to the correct spot
 
 
 
@@ -198,6 +206,10 @@ def main():
     parser.add_argument('--data_dir',
                         default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/',
                         help = 'directory where to find MSD data')
+    parser.add_argument('--empty_masks_dir',
+                        default = './output/predicted-masks/',
+                        help='The path where the empty 3D masks are stored'
+                        )
     args = parser.parse_args()
 
     data_paths = getDataPaths(args)
@@ -217,7 +229,7 @@ def main():
     visualizeExample(test_dataset[60])
 
     # make predictions
-    makePredictions(args, test_loader)
+    makePredictions(args, 'test', test_loader)
 
 
 

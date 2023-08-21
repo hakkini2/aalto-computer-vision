@@ -27,7 +27,7 @@ def getDataDicts(args, img_type):
 
 def createEmptyMaskFiles(args, img_type, data_dicts):
     # create folder
-    folder_name = args.data_txt_path.split('/')[2] + '_' + img_type
+    folder_name = args.data_txt_path.split('/')[2].split('_')[2].lower() + '_' + img_type
     dir_path = os.path.join(args.save_dir, folder_name)
     os.makedirs(dir_path, exist_ok=True)
     
@@ -38,14 +38,12 @@ def createEmptyMaskFiles(args, img_type, data_dicts):
 
         # do only for files that have predictions
         if any(fname.startswith(name) for fname in os.listdir(dir_2d_slices)):
-            # get paths to image and label
-            img_path = item['image']
+            # get path to label
             lbl_path = item['label']
             
-            # load image and label
-            img = sitk.ReadImage(img_path)
+            # load label
             mask = sitk.ReadImage(lbl_path)
-            print('processing patient', idx, img.GetSize(), mask.GetSize())
+            print('processing patient', idx, mask.GetSize())
 
             # Get the mask data as numpy array
             mask_data = sitk.GetArrayFromImage(mask)
@@ -63,6 +61,11 @@ def createEmptyMaskFiles(args, img_type, data_dicts):
 
 
 def main():
+    '''
+    when running change the path in --data_txt_path to run with
+    different MSD tasks
+    e.g. python3 create-empty-3d-masks.py --data_txt_path './dataset/MSD_Task10_Colon'
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_dir', default = './output/predicted-masks/', help='The path where to save the predicted masks in 3D')
     parser.add_argument('--data_dir', default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/', help = 'directory where to find MSD data')
