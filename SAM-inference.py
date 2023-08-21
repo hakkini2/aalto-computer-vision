@@ -50,11 +50,14 @@ from monai.transforms import (
 from samDataset import SAMDataset
 from samDataset import get_bounding_box
 
-
 device = torch.device("cuda:0")
 
 
 def getDataPaths(args):
+    '''
+    Get the paths to the training, validation and testing datasets
+    of the 2d slice images (and their ground truth masks).
+    '''
     # Initialize dictionary for storing image and label paths
     data_paths = {}
     datasets = ['train', 'val', 'test']
@@ -80,6 +83,10 @@ def getDataPaths(args):
 
 
 def visualizeExample(example):
+    '''
+    Visualize an example image (2d slice that contains ROI) from the data,
+    with the corresponding ground truth mask and prompt box.
+    '''
     for k,v in example.items():
         if k != "name" :
             print(k,v.shape)
@@ -108,7 +115,7 @@ def visualizeExample(example):
 
 
 
-def makePredictions(test_loader):
+def makePredictions(args, test_loader):
     '''
     Predictions with the SAM model and inference
     '''
@@ -140,8 +147,10 @@ def makePredictions(test_loader):
             name = batch["name"][0]
 
             # save prediction
-            medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
-            nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
+            #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
+            #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
+            saveSlicePrediction(args, name, medsam_seg)
+
 
             plt.figure(figsize=(12,4))
             plt.suptitle(name, fontsize=14)
@@ -163,6 +172,17 @@ def makePredictions(test_loader):
 
             
 
+def saveSlicePrediction(args, name, medsam_seg):
+    '''
+    Save predicted labels in 3D, in same format as the original
+    ground truth labels are saved. (so that they could be used
+    as pseudo labels in the future)
+    '''
+    print(name)
+    slice_ind = int(name.split('_')[2])
+    print(slice_ind)
+
+
 
 
 def main():
@@ -175,6 +195,9 @@ def main():
                         default='',
                         help='For which organ the inference should be made [liver,lung,pancreas,hepaticvessel,spleen,colon]. Default is all organs.'
                         )
+    parser.add_argument('--data_dir',
+                        default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/',
+                        help = 'directory where to find MSD data')
     args = parser.parse_args()
 
     data_paths = getDataPaths(args)
@@ -194,7 +217,7 @@ def main():
     visualizeExample(test_dataset[60])
 
     # make predictions
-    makePredictions(test_loader)
+    makePredictions(args, test_loader)
 
 
 
