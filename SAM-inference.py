@@ -149,7 +149,7 @@ def makePredictions(args, img_type, test_loader):
             # save prediction
             #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
             #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
-            saveSlicePrediction(args, img_type, name, medsam_seg)
+            #saveSlicePrediction(args, img_type, name, medsam_seg)
 
 
             plt.figure(figsize=(12,4))
@@ -169,6 +169,7 @@ def makePredictions(args, img_type, test_loader):
             #plt .savefig('./output/plots/'+name+'-prediction.png')
 
             plt.savefig('./output/plots/model-prediction.png')
+            plt.close()
 
             
 
@@ -227,7 +228,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
     # see an example of the test data
-    visualizeExample(test_dataset[60])
+    #visualizeExample(test_dataset[60])
 
     # make predictions
     makePredictions(args, 'test', test_loader)
