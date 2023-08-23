@@ -181,22 +181,14 @@ def saveSlicePrediction(args, img_type, name, medsam_seg):
     organ, patient, slice_ind = name.split('_')
     slice_ind = int(slice_ind)
 
-    # get path to (initially) empty mask
+    # get path to (initially) empty mask and load mask data
     pred_masks_dir = args.empty_masks_dir + organ + '_' + img_type + '/'
     path = pred_masks_dir + organ + '_' + patient + '.nii.gz'
-    print(path)
     mask = nib.load(path)
     mask_data = mask.get_fdata()
 
     # next add the predicted slice to the correct spot
-    print(mask_data.shape)
-    print(mask_data[slice_ind].shape)
-
-    print(medsam_seg.shape)
-    print(np.count_nonzero(mask_data))
     mask_data[slice_ind] = medsam_seg
-    print(np.count_nonzero(mask_data))
-
     mask_img = nib.Nifti1Image(mask_data, affine=mask.affine)
     nib.save(mask_img, path)
 
