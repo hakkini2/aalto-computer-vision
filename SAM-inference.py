@@ -4,6 +4,7 @@ Tutorial: https://medium.com/@rekalantar/segment-anything-model-sam-for-medical-
 
 import os
 import glob
+import gc
 import monai
 import torch
 import argparse
@@ -149,7 +150,7 @@ def makePredictions(args, img_type, test_loader):
             # save prediction
             #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
             #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
-            #saveSlicePrediction(args, img_type, name, medsam_seg)
+            saveSlicePrediction(args, img_type, name, medsam_seg)
 
 
             plt.figure(figsize=(12,4))
@@ -170,6 +171,12 @@ def makePredictions(args, img_type, test_loader):
 
             plt.savefig('./output/plots/model-prediction.png')
             plt.close()
+
+            # release memory
+            torch.cuda.empty_cache()
+            
+
+            
 
             
 
