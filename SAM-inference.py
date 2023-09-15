@@ -166,10 +166,11 @@ def makePredictions(args, img_type, test_loader):
             plt.axis('off')
             plt.tight_layout()
             
-
-            #plt .savefig('./output/plots/'+name+'-prediction.png')
-
-            plt.savefig('./output/plots/model-prediction.png')
+            if args.save_individual_plots:
+                plt .savefig('./output/plots/'+name+'-prediction.png')
+            else:
+                plt.savefig('./output/plots/model-prediction.png')
+            
             plt.close()
 
             # release memory
@@ -218,6 +219,10 @@ def main():
     parser.add_argument('--empty_masks_dir',
                         default = './output/predicted-masks/',
                         help='The path where the empty 3D masks are stored'
+                        )
+    parser.add_argument('--save_individual_plots',
+                        default=False,
+                        help='False = the results are saved to one plot that can be useful to look at while running. True = all results are plotted individually.'
                         )
     args = parser.parse_args()
 
