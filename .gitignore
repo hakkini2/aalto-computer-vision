@@ -4,4 +4,4 @@ model_checkpoints/
 output/predicted-masks/
 __pycache__/
 test-SAM.py
-
+calculate-dice-score.py

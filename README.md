@@ -26,3 +26,14 @@ python3 SAM-inference.py --organ <organ>
 where \<organ\> is one of the MSD tasks: *liver, lung, pancreas, hepaticvessel, spleen, colon*.
 
 
+For saving the results, program create-empty-3d-masks.py must be run for all the tasks before running SAM-inference.py. When running, change the value in argument --data_txt_path when running, for example:
+
+```
+python3 create-empty-3d-masks.py --data_txt_path './dataset/MSD_Task07_Pancreas'
+```
+
+Then, SAM-inference.py can be run with the argument --save_results:
+
+```
+python3 SAM-inference.py --save_results True
+```
