@@ -23,7 +23,11 @@ from transformers import SamProcessor
 from IPython.display import clear_output
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.functional import threshold, normalize
+from torchmetrics.functional.classification import dice
 
+from monai.losses import DiceLoss
+from monai.metrics import LossMetric
+from monai.metrics import DiceMetric
 
 from monai.transforms import (
     EnsureChannelFirstd,
@@ -50,8 +54,12 @@ from monai.transforms import (
 
 from samDataset import SAMDataset
 from samDataset import get_bounding_box
+from utils.utils import calculate_dice_score
 
 device = torch.device("cuda:0")
+
+loss_function = DiceLoss(sigmoid=True)
+dice_metric = DiceMetric(include_background=False, reduction='mean')
 
 
 def getDataPaths(args):
@@ -119,13 +127,17 @@ def visualizeExample(example):
 def makePredictions(args, img_type, test_loader):
     '''
     Predictions with the SAM model and inference
+
+    args: parser args
+    img_type: 'test', 'train' or 'val'  String
+    test_loader: DataLoader object
     '''
 
     # load pretrained weights
     model = SamModel.from_pretrained("facebook/sam-vit-base")   #sam-vit-huge
     model.to(device)
     
-    # Iteratire through test images
+    # Iterate through test images
     with torch.no_grad():
         for batch in tqdm(test_loader):
             # forward pass
@@ -133,24 +145,44 @@ def makePredictions(args, img_type, test_loader):
                         input_boxes=batch["input_boxes"].cuda(),
                         multimask_output=False)
 
-            # compute loss
+            #------------------------------------------------------------------------
+            # LOSS
             predicted_masks = outputs.pred_masks.squeeze(1)
             ground_truth_masks = batch["ground_truth_mask"].float().cuda()
-    #         loss = seg_loss(predicted_masks, ground_truth_masks.unsqueeze(1))
-                        
+            #loss = seg_loss(predicted_masks, ground_truth_masks.unsqueeze(1))
+            
+            print('shape of predicted:', predicted_masks.shape)
+            print('shape of ground truth:', ground_truth_masks.unsqueeze(1).shape)
+
+            # MONAI's dice coefficient
+            print('MONAI version:')
+            dice_metric(predicted_masks, ground_truth_masks.unsqueeze(1))
+            metric = dice_metric.aggregate().item()
+            print(metric)
+
+            # try dice score with pytorch implementation
+            print('Pytorch version:')
+            dice_coefficient = dice(predicted_masks, ground_truth_masks.unsqueeze(1).long())    #target must be integer tensor
+            print(dice_coefficient)
+
+            # try owm implementation for dice score
+            print('Own implementation of dice:')
+            dice_from_utils = calculate_dice_score(predicted_masks, ground_truth_masks.unsqueeze(1))
+            print(dice_from_utils)
+            #-----------------------------------------------------------------------
 
             # apply sigmoid
             medsam_seg_prob = torch.sigmoid(outputs.pred_masks.squeeze(1))
             # convert soft mask to hard mask
             medsam_seg_prob = medsam_seg_prob.cpu().numpy().squeeze()
             medsam_seg = (medsam_seg_prob > 0.5).astype(np.uint8)
-            
             name = batch["name"][0]
 
             # save prediction
-            #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
-            #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
-            saveSlicePrediction(args, img_type, name, medsam_seg)
+            if args.save_results:
+                #medsam_seg_img = nib.Nifti1Image(medsam_seg, affine=np.eye(4))
+                #nib.save(medsam_seg_img, './output/predicted-masks/'+name+'_predicted_mask.nii')
+                saveSlicePrediction(args, img_type, name, medsam_seg)
 
 
             plt.figure(figsize=(12,4))
@@ -167,7 +199,7 @@ def makePredictions(args, img_type, test_loader):
             plt.tight_layout()
             
             if args.save_individual_plots:
-                plt .savefig('./output/plots/'+name+'-prediction.png')
+                plt.savefig('./output/plots/'+name+'-prediction.png')
             else:
                 plt.savefig('./output/plots/model-prediction.png')
             
@@ -184,14 +216,20 @@ def makePredictions(args, img_type, test_loader):
 def saveSlicePrediction(args, img_type, name, medsam_seg):
     '''
     Save predicted labels in 3D, in nii.gz format (so that they could
-    be used as pseudo labels in the future)
+    be used as pseudo labels in the future). This function is used to update
+    a 2D slice into an output 3D .nii.gz image.
+
+    args: parser arguments
+    img_type: 'test', 'train' or 'val'                      String
+    name: image name in format 'organ_patient_slice'        String
+    medsam_seg: the predicted slice in format (256,256)     numpy.ndarray
     '''
     print(name)
     organ, patient, slice_ind = name.split('_')
     slice_ind = int(slice_ind)
 
     # get path to (initially) empty mask and load mask data
-    pred_masks_dir = args.empty_masks_dir + organ + '_' + img_type + '/'
+    pred_masks_dir = args.output_masks_dir + organ + '_' + img_type + '/'
     path = pred_masks_dir + organ + '_' + patient + '.nii.gz'
     mask = nib.load(path)
     mask_data = mask.get_fdata()
@@ -216,14 +254,18 @@ def main():
     parser.add_argument('--data_dir',
                         default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/',
                         help = 'directory where to find MSD data')
-    parser.add_argument('--empty_masks_dir',
+    parser.add_argument('--output_masks_dir',
                         default = './output/predicted-masks/',
-                        help='The path where the empty 3D masks are stored'
+                        help='The path where the initially empty 3D masks (for storing the outputs) are stored'
                         )
     parser.add_argument('--save_individual_plots',
                         default=False,
                         help='False = the results are saved to one plot that can be useful to look at while running. True = all results are plotted individually.'
                         )
+    parser.add_argument('--save_results',
+                        default=False,
+                        help='Whether to save the resulting 3D masks (True or False), default is False.')
+    
     args = parser.parse_args()
 
     data_paths = getDataPaths(args)
