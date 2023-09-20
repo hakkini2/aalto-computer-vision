@@ -138,6 +138,7 @@ def makePredictions(args, img_type, test_loader):
     model.to(device)
     
     # Iterate through test images
+    i = 0
     with torch.no_grad():
         for batch in tqdm(test_loader):
             # forward pass
@@ -167,8 +168,10 @@ def makePredictions(args, img_type, test_loader):
 
             # try owm implementation for dice score
             print('Own implementation of dice:')
-            dice_from_utils = calculate_dice_score(predicted_masks, ground_truth_masks.unsqueeze(1))
+            dice_from_utils, sensitivity, specificity = calculate_dice_score(predicted_masks, ground_truth_masks.unsqueeze(1))
             print(dice_from_utils)
+            print('sensitivity: ', sensitivity)
+            print('specificity: ', specificity)
             #-----------------------------------------------------------------------
 
             # apply sigmoid
@@ -199,7 +202,8 @@ def makePredictions(args, img_type, test_loader):
             plt.tight_layout()
             
             if args.save_individual_plots:
-                plt.savefig('./output/plots/'+name+'-prediction.png')
+                if i % 50 == 0:
+                    plt.savefig('./output/plots/'+name+'-prediction.png')
             else:
                 plt.savefig('./output/plots/model-prediction.png')
             
@@ -207,6 +211,7 @@ def makePredictions(args, img_type, test_loader):
 
             # release memory
             torch.cuda.empty_cache()
+            i += 1
             
 
             

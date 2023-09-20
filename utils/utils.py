@@ -36,8 +36,10 @@ def calculate_dice_score(y_pred, y):
 
     #dice = (2*tp)/(2*tp+fp+fn)
     dice = 2*tp/(torch.sum(predict) + torch.sum(target))
-
-    return dice
+    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    
+    return dice, sensitivity, specificity
 
 
 

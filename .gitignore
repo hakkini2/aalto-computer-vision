@@ -1,6 +1,7 @@
 content/
 model_checkpoints/
 output/predicted-masks/
+output/example-plots/
 __pycache__/
 test-SAM.py
 calculate-dice-score.py
