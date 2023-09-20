@@ -1,5 +1,4 @@
 content/
-utils/
 model_checkpoints/
 output/predicted-masks/
 __pycache__/
