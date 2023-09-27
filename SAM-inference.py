@@ -191,7 +191,7 @@ def makePredictions(args, img_type, test_loader):
 
             # try owm implementation (in utils.py) for dice score
             print('Own implementation of dice:')
-            dice_from_utils, sensitivity, specificity = calculate_dice_score(torch.Tensor(medsam_seg), batch["ground_truth_mask"][0])
+            dice_from_utils, sensitivity, specificity = calculate_dice_score(predicted_masks, ground_truth_masks.unsqueeze(1))
             print(dice_from_utils)
             print('sensitivity: ', sensitivity)
             print('specificity: ', specificity)
