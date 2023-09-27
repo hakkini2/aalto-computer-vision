@@ -28,6 +28,7 @@ from torchmetrics.functional.classification import dice
 from monai.losses import DiceLoss
 from monai.metrics import LossMetric
 from monai.metrics import DiceMetric
+from monai.metrics import DiceHelper
 
 from monai.transforms import (
     EnsureChannelFirstd,
@@ -146,40 +147,57 @@ def makePredictions(args, img_type, test_loader):
                         input_boxes=batch["input_boxes"].cuda(),
                         multimask_output=False)
 
-            #------------------------------------------------------------------------
-            # LOSS
+            # predicted masks and ground truth masks
             predicted_masks = outputs.pred_masks.squeeze(1)
             ground_truth_masks = batch["ground_truth_mask"].float().cuda()
-            #loss = seg_loss(predicted_masks, ground_truth_masks.unsqueeze(1))
             
-            print('shape of predicted:', predicted_masks.shape)
-            print('shape of ground truth:', ground_truth_masks.unsqueeze(1).shape)
-
-            # MONAI's dice coefficient
-            print('MONAI version:')
-            dice_metric(predicted_masks, ground_truth_masks.unsqueeze(1))
-            metric = dice_metric.aggregate().item()
-            print(metric)
-
-            # try dice score with pytorch implementation
-            print('Pytorch version:')
-            dice_coefficient = dice(predicted_masks, ground_truth_masks.unsqueeze(1).long())    #target must be integer tensor
-            print(dice_coefficient)
-
-            # try owm implementation for dice score
-            print('Own implementation of dice:')
-            dice_from_utils, sensitivity, specificity = calculate_dice_score(predicted_masks, ground_truth_masks.unsqueeze(1))
-            print(dice_from_utils)
-            print('sensitivity: ', sensitivity)
-            print('specificity: ', specificity)
-            #-----------------------------------------------------------------------
-
             # apply sigmoid
             medsam_seg_prob = torch.sigmoid(outputs.pred_masks.squeeze(1))
             # convert soft mask to hard mask
             medsam_seg_prob = medsam_seg_prob.cpu().numpy().squeeze()
             medsam_seg = (medsam_seg_prob > 0.5).astype(np.uint8)
             name = batch["name"][0]
+
+
+            #------------------------------------------------------------------------
+            # DICE COEFFICIENT
+
+            # reformatting for dice score calculations
+            # torch tensor of shape (1,256,256)
+            medsam_seg_tensor = torch.Tensor(medsam_seg).unsqueeze(0).cuda()
+
+            print(1 in medsam_seg_tensor)
+            print(1 in batch["ground_truth_mask"][0])
+
+            print(medsam_seg_tensor.shape)
+            print(batch["ground_truth_mask"][0].unsqueeze(0).cuda().shape)
+
+
+            # MONAI's dice coefficient
+            print('MONAI version:')
+            # monai's dice  wants images in format (channel, dim1, dim2)
+            dice_metric(medsam_seg_tensor, batch["ground_truth_mask"][0].unsqueeze(0).cuda())
+            metric = dice_metric.aggregate().item()
+            print(metric)
+
+            #dice_helper = DiceHelper(include_background=True)
+            #score, not_nans = dice_helper(medsam_seg_tensor, ground_truth_masks)
+            #print(score)
+            
+            # try dice score with pytorch implementation
+            print('Pytorch version:')
+            dice_coefficient = dice(torch.Tensor(medsam_seg).long(), batch["ground_truth_mask"][0].long())    #target must be integer tensor
+            print(dice_coefficient)
+
+            # try owm implementation (in utils.py) for dice score
+            print('Own implementation of dice:')
+            dice_from_utils, sensitivity, specificity = calculate_dice_score(torch.Tensor(medsam_seg), batch["ground_truth_mask"][0])
+            print(dice_from_utils)
+            print('sensitivity: ', sensitivity)
+            print('specificity: ', specificity)
+            #-----------------------------------------------------------------------
+
+
 
             # save prediction
             if args.save_results:

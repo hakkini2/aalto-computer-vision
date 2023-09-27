@@ -10,8 +10,8 @@ def calculate_dice_score(y_pred, y):
     '''
     https://github.com/ljwztc/CLIP-Driven-Universal-Model/blob/main/utils/utils.py
 
-    y_pred: predicted labels, torch tensor of shape torch.Size([1, 1, 256, 256])
-    y: ground truth labels, torch tensor of shape torch.Size([1, 1, 256, 256])
+    y_pred: predicted labels, torch tensor 
+    y: ground truth labels, torch tensor 
     
     dice = (2*tp)/(2*tp+fp+fn)
     '''
