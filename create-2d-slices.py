@@ -84,9 +84,18 @@ def make2dSlices(args, img_type, data_dicts):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base_dir', default = './content', help='The path where to save the 2d slices')
-    parser.add_argument('--data_dir', default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/', help = 'directory where to find MSD data')
-    parser.add_argument('--data_txt_path', default = './dataset/MSD_Task09_Spleen', help = 'path to txt file describing the train/val/test spits')
+    parser.add_argument('--base_dir',
+                        default = './content',
+                        help='The path where to save the 2d slices'
+                        )
+    parser.add_argument('--data_dir',
+                        default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/',
+                        help = 'directory where to find MSD data'
+                        )
+    parser.add_argument('--data_txt_path',
+                        default = './dataset/MSD_Task09_Spleen',
+                        help = 'path to txt file describing the train/val/test spits'
+                        )
     args = parser.parse_args()
 
     # get data dicts of train, val and test splits

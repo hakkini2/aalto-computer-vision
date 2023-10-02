@@ -7,8 +7,10 @@
 First, the 2D slices of the 3D images must be created with:
 
 ```
-python3 create-2d-slices.py
+python3 create-2d-slices.py --data_txt_path <path to txt file>
 ```
+
+where \<path to txt file\> is the path to the txt-file describing the data splits to train, val and test. Notice the format of the file name: for example, we have files *MSD_Task03_Liver_train.txt*, *MSD_Task03_Liver_val.txt* and *MSD_Task03_Liver_test.txt* in the folder *./dataset/*. Then  \<path to txt file\> is *'./dataset/MSD_Task03_Liver'*.
 
 Then, SAM-inference.py can be run for all MSD tasks with:
 
