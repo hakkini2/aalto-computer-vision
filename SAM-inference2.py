@@ -53,8 +53,8 @@ from monai.transforms import (
     ToTensord,
 )
 
-from samDataset import SAMDataset
-from samDataset import get_bounding_box
+from samDataset2 import SAMDataset2
+from samDataset2 import get_bounding_box
 from utils.utils import calculate_dice_score
 
 device = torch.device("cuda:0")
@@ -290,6 +290,15 @@ def main():
                         default=False,
                         help='Whether to save the resulting 3D masks (True or False), default is False.')
     
+    # arguments for MONAI Transforms
+    parser.add_argument('--a_min', default=-175, type=float, help='a_min in ScaleIntensityRanged')
+    parser.add_argument('--a_max', default=250, type=float, help='a_max in ScaleIntensityRanged')
+    parser.add_argument('--b_min', default=0.0, type=float, help='b_min in ScaleIntensityRanged')
+    parser.add_argument('--b_max', default=1.0, type=float, help='b_max in ScaleIntensityRanged')
+    parser.add_argument('--space_x', default=1.5, type=float, help='spacing in x direction')
+    parser.add_argument('--space_y', default=1.5, type=float, help='spacing in y direction')
+    parser.add_argument('--space_z', default=1.5, type=float, help='spacing in z direction')
+
     args = parser.parse_args()
 
     data_paths = getDataPaths(args)
@@ -299,7 +308,7 @@ def main():
     processor = SamProcessor.from_pretrained("facebook/sam-vit-base")
     print(processor)
 
-    test_dataset = SAMDataset(image_paths=data_paths['test_images'],
+    test_dataset = SAMDataset2(args=args, image_paths=data_paths['test_images'],
                               mask_paths=data_paths['test_masks'],
                               processor=processor
                               )

@@ -95,11 +95,10 @@ class SAMDataset(Dataset):
             ScaleIntensityRanged(keys=['img'], a_min=-1000, a_max=2000, 
                          b_min=0.0, b_max=255.0, clip=True), 
             
-            ScaleIntensityRanged(keys=['label'], a_min=0, a_max=255, 
-                         b_min=0.0, b_max=1.0, clip=True), 
+            #ScaleIntensityRanged(keys=['label'], a_min=0, a_max=255, 
+            #             b_min=0.0, b_max=1.0, clip=True), 
 
             SpatialPadd(keys=["img", "label"], spatial_size=(256,256))
-#             RepeatChanneld(keys=['img'], repeats=3, allow_missing_keys=True)
         ])
 
     def __len__(self):
@@ -116,7 +115,7 @@ class SAMDataset(Dataset):
         image = data_dict['img'].squeeze()
         ground_truth_mask = data_dict['label'].squeeze()
 
-        # convert to int type for huggingface's models expected inputs
+        # convert to int type
         image = image.astype(np.uint8)
 
         # convert the grayscale array to RGB (3 channels)
