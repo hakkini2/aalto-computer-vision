@@ -38,7 +38,7 @@ def writeFile(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_dir',
-                        default = './content',
+                        default = 'content',
                         help='The path to where the 2d slices are stored'
                         )
     args = parser.parse_args()

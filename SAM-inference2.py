@@ -63,33 +63,6 @@ loss_function = DiceLoss(sigmoid=True)
 dice_metric = DiceMetric(include_background=False, reduction='mean')
 
 
-def getDataPaths(args):
-    '''
-    Get the paths to the training, validation and testing datasets
-    of the 2d slice images (and their ground truth masks).
-    '''
-    # Initialize dictionary for storing image and label paths
-    data_paths = {}
-    datasets = ['train', 'val', 'test']
-    data_types = ['2d_images', '2d_masks']
-
-    # Create directories and print the number of images and masks in each
-    for dataset in datasets:
-        for data_type in data_types:
-            # Construct the directory path
-            dir_path = os.path.join(args.base_dir, f'{dataset}_{data_type}')
-            
-            # Find images and labels in the directory
-            files = sorted(glob.glob(os.path.join(dir_path, args.organ+"*.nii.gz")))
-            
-            # Store the image and label paths in the dictionary
-            data_paths[f'{dataset}_{data_type.split("_")[1]}'] = files
-
-    print('Number of training images', len(data_paths['train_images']))
-    print('Number of validation images', len(data_paths['val_images']))
-    print('Number of test images', len(data_paths['test_images']))
-
-    return data_paths
 
 
 def visualizeExample(example):
@@ -277,7 +250,8 @@ def main():
                         )
     parser.add_argument('--data_dir',
                         default='/l/ComputerVision/CLIP-and-SwinUNETR/Swin-UNETR-with-MSD/data/',
-                        help = 'directory where to find MSD data')
+                        help = 'directory where to find MSD data'
+                        )
     parser.add_argument('--output_masks_dir',
                         default = './output/predicted-masks/',
                         help='The path where the initially empty 3D masks (for storing the outputs) are stored'
@@ -301,22 +275,13 @@ def main():
 
     args = parser.parse_args()
 
-    data_paths = getDataPaths(args)
-
-    # SamProcessor for image preprocessing
-    # create an instance of the processor for image preprocessing
-    processor = SamProcessor.from_pretrained("facebook/sam-vit-base")
-    print(processor)
-
-    test_dataset = SAMDataset2(args=args, image_paths=data_paths['test_images'],
-                              mask_paths=data_paths['test_masks'],
-                              processor=processor
-                              )
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+    
 
     # see an example of the test data
     #visualizeExample(test_dataset[60])
 
+    #get data loader
+    test_loader = SAMDataset2(args)
     # make predictions
     makePredictions(args, 'test', test_loader)
 

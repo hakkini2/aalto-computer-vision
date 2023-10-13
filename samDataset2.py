@@ -56,6 +56,7 @@ from monai.data.image_reader import ImageReader
 from monai.utils.enums import PostFix
 DEFAULT_POST_FIX = PostFix.meta()
 
+
 def get_bounding_box(ground_truth_map):
     '''
     This function creates varying bounding box coordinates based on the segmentation contours as prompt for the SAM model
@@ -80,6 +81,37 @@ def get_bounding_box(ground_truth_map):
         return bbox
     else:
         return [0, 0, 256, 256] # if there is no mask in the array, set bbox to image size
+
+
+def getDataPaths(args):
+    '''
+    Get the paths to the training, validation and testing datasets
+    of the 2d slice images (and their ground truth masks).
+    '''
+    # Initialize dictionary for storing image and label paths
+    data_paths = {}
+    datasets = ['train', 'val', 'test']
+    data_types = ['2d_images', '2d_masks']
+
+    # Create directories and print the number of images and masks in each
+    for dataset in datasets:
+        for data_type in data_types:
+            # Construct the directory path
+            dir_path = os.path.join(args.base_dir, f'{dataset}_{data_type}')
+            
+            # Find images and labels in the directory
+            files = sorted(glob.glob(os.path.join(dir_path, args.organ+"*.nii.gz")))
+            
+            # Store the image and label paths in the dictionary
+            data_paths[f'{dataset}_{data_type.split("_")[1]}'] = files
+
+
+    print('Number of training images', len(data_paths['train_images']))
+    print('Number of validation images', len(data_paths['val_images']))
+    print('Number of test images', len(data_paths['test_images']))
+
+
+    return data_paths
 
 
 class LoadImageh5d(MapTransform):
@@ -140,11 +172,17 @@ class LoadImageh5d(MapTransform):
  
 
 class SAMDataset2(Dataset):
-    def __init__(self, args, image_paths, mask_paths, processor):
-        
-        self.image_paths = image_paths
-        self.mask_paths = mask_paths
-        self.processor = processor
+    def __init__(self, args):
+        self.args = args
+
+        # get data paths
+        data_paths = getDataPaths(self.args)
+        self.image_paths = data_paths['test_images']
+        self.mask_paths = data_paths['test_masks']
+
+        # SamProcessor for image preprocessing
+        # create an instance of the processor for image preprocessing
+        self.processor = SamProcessor.from_pretrained("facebook/sam-vit-base")
         self.transforms = transforms = Compose([
             
             LoadImageh5d(keys=["img", "label"]),
@@ -193,9 +231,6 @@ class SAMDataset2(Dataset):
         image_rgb = Image.fromarray(array_rgb)
         
         # get bounding box prompt (returns xmin, ymin, xmax, ymax)
-        # in this dataset, the contours are -1 so we change them to 1 for label and 0 for background
-        # ground_truth_mask[ground_truth_mask < 0] = 1
-        
         prompt = get_bounding_box(ground_truth_mask)
         
         # prepare image and prompt for the model
@@ -209,4 +244,8 @@ class SAMDataset2(Dataset):
         inputs["ground_truth_mask"] = torch.Tensor(ground_truth_mask)
         inputs["name"] = image_path.split('/')[3].split('.')[0]
 
-        return inputs
+        test_dataset = inputs
+        
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+        return test_loader
